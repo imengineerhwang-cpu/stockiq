@@ -23,7 +23,7 @@ from datetime import datetime
 import pandas as pd
 from curl_cffi import requests as cfr
 
-CACHE_DIR = "data/tungsten"
+CACHE_DIR = "data/macro/tungsten"
 CACHE_FILE = os.path.join(CACHE_DIR, "komis_apt.json")
 CACHE_TTL_SEC = 12 * 60 * 60  # 12시간
 

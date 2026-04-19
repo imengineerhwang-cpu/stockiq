@@ -19,7 +19,7 @@ from datetime import datetime
 import pandas as pd
 from curl_cffi import requests as cfr
 
-CACHE_DIR = "data/machine_tool"
+CACHE_DIR = "data/macro/machine_tool"
 CACHE_FILE = os.path.join(CACHE_DIR, "te_japanmactooord.json")
 CACHE_TTL_SEC = 24 * 60 * 60  # 24시간
 

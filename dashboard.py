@@ -24,7 +24,10 @@ ANALYSIS_DIR = "data/analysis"
 os.makedirs(ANALYSIS_DIR, exist_ok=True)
 
 # ── 비밀번호 게이트 ────────────────────────────────────────────────────────────
-_PASSWORD = st.secrets.get("PASSWORD", "") if hasattr(st, "secrets") else ""
+try:
+    _PASSWORD = st.secrets.get("PASSWORD", "")
+except Exception:
+    _PASSWORD = ""  # 로컬: secrets 파일 없으면 비밀번호 없이 통과
 
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = not _PASSWORD  # 비밀번호 미설정 시 자동 통과
@@ -147,8 +150,40 @@ def load_or_generate_analysis(year, prior_year, pct, fin_dir):
 
 
 st.set_page_config(page_title="StockIQ", page_icon="📈", layout="wide")
+
+# ── 회사 선택 (사이드바) ──────────────────────────────────────────────────────
+_companies_path = "companies.csv"
+if os.path.exists(_companies_path):
+    _co_df = pd.read_csv(_companies_path)
+    _co_names = _co_df["name"].tolist()
+else:
+    _co_df = pd.DataFrame(columns=["name", "stock_code", "corp_code", "sector", "description"])
+    _co_names = []
+
+with st.sidebar:
+    st.markdown("## 📊 분석 회사")
+    if _co_names:
+        selected_company = st.selectbox("회사 선택", _co_names, label_visibility="collapsed")
+        _row = _co_df[_co_df["name"] == selected_company].iloc[0]
+        CORP_CODE   = str(_row["corp_code"]).zfill(8)
+        st.caption(f"**{_row['sector']}** · {_row['description']}")
+    else:
+        selected_company = "미등록"
+        CORP_CODE = ""
+        st.warning("companies.csv가 없거나 비어 있어요.")
+    st.divider()
+    st.caption("새 회사 추가: companies.csv에 행 추가 후 재실행")
+
+# ── 회사별 경로 ───────────────────────────────────────────────────────────────
+company_dir  = f"data/companies/{selected_company}"
+fin_dir      = f"{company_dir}/financials"
+briefing_dir = f"{company_dir}/briefings"
+telegram_dir = f"{company_dir}/telegram"
+ANALYSIS_DIR = f"{company_dir}/analysis"
+os.makedirs(ANALYSIS_DIR, exist_ok=True)
+
 st.title("📈 StockIQ 투자 리서치 대시보드")
-st.caption(f"마지막 업데이트: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+st.caption(f"**{selected_company}** · 마지막 업데이트: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
 # 시세 데이터
 st.subheader("보유 관심 종목")
@@ -172,6 +207,9 @@ st.divider()
 st.subheader("최근 공시")
 if os.path.exists("data/disclosures.csv"):
     df_disc = pd.read_csv("data/disclosures.csv")
+    # 선택한 회사 공시만 필터
+    if "종목명" in df_disc.columns:
+        df_disc = df_disc[df_disc["종목명"] == selected_company]
     st.dataframe(df_disc, width="stretch")
 else:
     st.warning("data/disclosures.csv 파일이 없어요.")
@@ -180,7 +218,6 @@ st.divider()
 
 # AI 브리핑
 st.subheader("AI 브리핑")
-briefing_dir = "data/briefings"
 if os.path.exists(briefing_dir):
     files = sorted(os.listdir(briefing_dir), reverse=True)
     if files:
@@ -192,14 +229,13 @@ if os.path.exists(briefing_dir):
     else:
         st.warning("브리핑 파일이 없어요. briefing.py 먼저 실행해 주세요.")
 else:
-    st.warning("briefing 폴더가 없어요.")
+    st.warning("브리핑 폴더가 없어요.")
 
 st.divider()
 
 # 텔레그램 정보
 st.subheader("📨 텔레그램 정보")
 
-telegram_dir = "data/telegram"
 
 if os.path.exists(telegram_dir):
     summary_files = sorted(
@@ -215,7 +251,7 @@ if os.path.exists(telegram_dir):
         with st.expander(f"📊 {title}", expanded=False):
             st.markdown(content)
 else:
-    st.warning("data/telegram 폴더가 없어요.")
+    st.warning("텔레그램 폴더가 없어요.")
 
 st.divider()
 
@@ -520,8 +556,10 @@ if w_df_m is not None and not w_df_m.empty:
 
 st.divider()
 
-# ── 와이지-원 OPM 시뮬레이터 ────────────────────────────────────────────────
-st.subheader("🔬 와이지-원 OPM 시뮬레이터")
+# ── OPM 시뮬레이터 (현재 와이지-원 전용 — 신규 회사 추가 시 별도 설정 필요) ──
+st.subheader("🔬 OPM 시뮬레이터")
+if selected_company != "와이지-원":
+    st.info(f"**{selected_company}** 전용 수치 설정이 필요합니다. 현재는 와이지-원 기준으로 표시됩니다.")
 st.caption("2025년 실적을 기반으로 판가·물량·원재료 변수를 조정해 영업이익률을 추정합니다.")
 
 # ── 기준값 (2025 연간 연결, 단위: 억원) ─────────────────────────────────────
@@ -980,8 +1018,6 @@ st.divider()
 
 # 재무 차트
 st.subheader("재무 차트")
-
-fin_dir = "data/financials"
 
 
 def _to_num(v):
