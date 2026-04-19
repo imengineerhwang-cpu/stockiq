@@ -1,0 +1,25 @@
+# 환경변수 / 시크릿 (절대 커밋 금지)
+.env
+
+# Python 가상환경
+venv/
+.venv/
+
+# Python 캐시
+__pycache__/
+*.pyc
+*.pyo
+
+# Claude 작업 디렉터리
+.claude/
+
+# 대용량 DART 원문 XML (수MB/개 → GitHub 용량 초과)
+data/raw/doc_*.xml
+
+# 임시 파일
+err.txt
+files.zip
+
+# IDE
+.vscode/
+.idea/

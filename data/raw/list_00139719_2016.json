@@ -1,0 +1,43 @@
+{
+  "status": "000",
+  "message": "정상",
+  "page_no": 1,
+  "page_count": 100,
+  "total_count": 3,
+  "total_page": 1,
+  "list": [
+    {
+      "corp_code": "00139719",
+      "corp_name": "와이지-원",
+      "stock_code": "019210",
+      "corp_cls": "K",
+      "report_nm": "사업보고서 (2016.12)",
+      "rcept_no": "20170329000791",
+      "flr_nm": "와이지-원",
+      "rcept_dt": "20170329",
+      "rm": "연"
+    },
+    {
+      "corp_code": "00139719",
+      "corp_name": "와이지-원",
+      "stock_code": "019210",
+      "corp_cls": "K",
+      "report_nm": "[기재정정]사업보고서 (2015.12)",
+      "rcept_no": "20160516001815",
+      "flr_nm": "와이지-원",
+      "rcept_dt": "20160516",
+      "rm": "연"
+    },
+    {
+      "corp_code": "00139719",
+      "corp_name": "와이지-원",
+      "stock_code": "019210",
+      "corp_cls": "K",
+      "report_nm": "사업보고서 (2015.12)",
+      "rcept_no": "20160330004132",
+      "flr_nm": "와이지-원",
+      "rcept_dt": "20160330",
+      "rm": "정연"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "status": "000",
+  "message": "정상",
+  "page_no": 1,
+  "page_count": 100,
+  "total_count": 3,
+  "total_page": 1,
+  "list": [
+    {
+      "corp_code": "00139719",
+      "corp_name": "와이지-원",
+      "stock_code": "019210",
+      "corp_cls": "K",
+      "report_nm": "사업보고서 (2021.12)",
+      "rcept_no": "20220321001219",
+      "flr_nm": "와이지-원",
+      "rcept_dt": "20220321",
+      "rm": "연"
+    },
+    {
+      "corp_code": "00139719",
+      "corp_name": "와이지-원",
+      "stock_code": "019210",
+      "corp_cls": "K",
+      "report_nm": "[첨부정정]사업보고서 (2020.12)",
+      "rcept_no": "20210317000430",
+      "flr_nm": "와이지-원",
+      "rcept_dt": "20210317",
+      "rm": "연"
+    },
+    {
+      "corp_code": "00139719",
+      "corp_name": "와이지-원",
+      "stock_code": "019210",
+      "corp_cls": "K",
+      "report_nm": "사업보고서 (2020.12)",
+      "rcept_no": "20210316001195",
+      "flr_nm": "와이지-원",
+      "rcept_dt": "20210316",
+      "rm": "정연"
+    }
+  ]
+}
