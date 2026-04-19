@@ -23,6 +23,24 @@ for _k in ("DART_API_KEY", "ANTHROPIC_API_KEY"):
 ANALYSIS_DIR = "data/analysis"
 os.makedirs(ANALYSIS_DIR, exist_ok=True)
 
+# ── 비밀번호 게이트 ────────────────────────────────────────────────────────────
+_PASSWORD = st.secrets.get("PASSWORD", "") if hasattr(st, "secrets") else ""
+
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = not _PASSWORD  # 비밀번호 미설정 시 자동 통과
+
+if not st.session_state.authenticated:
+    st.set_page_config(page_title="StockIQ", page_icon="📈", layout="centered")
+    st.title("📈 StockIQ")
+    pw = st.text_input("비밀번호를 입력하세요", type="password", placeholder="Password")
+    if st.button("로그인", use_container_width=True) or pw:
+        if pw == _PASSWORD:
+            st.session_state.authenticated = True
+            st.rerun()
+        elif pw:
+            st.error("비밀번호가 틀렸습니다.")
+    st.stop()
+
 CORP_CODE = "00139719"
 
 
