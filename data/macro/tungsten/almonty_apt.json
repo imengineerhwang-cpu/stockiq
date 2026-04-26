@@ -1,0 +1,420 @@
+{
+  "fetched_at": "2026-04-27T01:29:31",
+  "source_url": "https://almonty.com/tungsten-history/",
+  "rows": [
+    {
+      "date": "2025-06-06",
+      "low": 410.0,
+      "high": 450.0,
+      "average": 430.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-06-13",
+      "low": 410.0,
+      "high": 450.0,
+      "average": 430.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-06-20",
+      "low": 430.0,
+      "high": 475.0,
+      "average": 452.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-06-27",
+      "low": 440.0,
+      "high": 485.0,
+      "average": 462.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-07-04",
+      "low": 440.0,
+      "high": 485.0,
+      "average": 462.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-07-11",
+      "low": 460.0,
+      "high": 485.0,
+      "average": 472.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-07-18",
+      "low": 460.0,
+      "high": 485.0,
+      "average": 472.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-07-25",
+      "low": 460.0,
+      "high": 490.0,
+      "average": 475.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-08-01",
+      "low": 475.0,
+      "high": 495.0,
+      "average": 485.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-08-08",
+      "low": 485.0,
+      "high": 503.0,
+      "average": 494.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-08-15",
+      "low": 485.0,
+      "high": 505.0,
+      "average": 495.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-08-22",
+      "low": 485.0,
+      "high": 520.0,
+      "average": 502.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-08-29",
+      "low": 495.0,
+      "high": 545.0,
+      "average": 520.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-09-05",
+      "low": 535.0,
+      "high": 550.0,
+      "average": 542.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-09-12",
+      "low": 550.0,
+      "high": 645.0,
+      "average": 597.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-09-19",
+      "low": 570.0,
+      "high": 650.0,
+      "average": 610.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-09-26",
+      "low": 580.0,
+      "high": 650.0,
+      "average": 615.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-10-03",
+      "low": 580.0,
+      "high": 650.0,
+      "average": 615.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-10-10",
+      "low": 600.0,
+      "high": 670.0,
+      "average": 635.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-10-17",
+      "low": 600.0,
+      "high": 685.0,
+      "average": 642.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-10-24",
+      "low": 610.0,
+      "high": 685.0,
+      "average": 647.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-10-31",
+      "low": 610.0,
+      "high": 685.0,
+      "average": 647.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-11-07",
+      "low": 647.5,
+      "high": 700.0,
+      "average": 673.75,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-11-14",
+      "low": 673.75,
+      "high": 705.0,
+      "average": 689.38,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-11-21",
+      "low": 735.0,
+      "high": 780.0,
+      "average": 757.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-11-28",
+      "low": 735.0,
+      "high": 780.0,
+      "average": 757.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-12-05",
+      "low": 740.0,
+      "high": 800.0,
+      "average": 770.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-12-12",
+      "low": 800.0,
+      "high": 825.0,
+      "average": 812.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-12-19",
+      "low": 825.0,
+      "high": 900.0,
+      "average": 862.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2025-12-26",
+      "low": 825.0,
+      "high": 900.0,
+      "average": 862.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-01-02",
+      "low": 900.0,
+      "high": 940.0,
+      "average": 920.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-01-09",
+      "low": 950.0,
+      "high": 987.0,
+      "average": 968.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-01-16",
+      "low": 987.0,
+      "high": 1050.0,
+      "average": 1018.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-01-23",
+      "low": 1080.0,
+      "high": 1325.0,
+      "average": 1202.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-01-30",
+      "low": 1100.0,
+      "high": 1398.0,
+      "average": 1249.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-02-06",
+      "low": 1200.0,
+      "high": 1550.0,
+      "average": 1375.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-02-13",
+      "low": 1650.0,
+      "high": 1825.0,
+      "average": 1737.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-02-20",
+      "low": 1650.0,
+      "high": 1900.0,
+      "average": 1775.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-02-27",
+      "low": 1890.0,
+      "high": 1998.0,
+      "average": 1944.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-03-06",
+      "low": 2000.0,
+      "high": 2195.0,
+      "average": 2097.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-03-13",
+      "low": 2100.0,
+      "high": 2400.0,
+      "average": 2250.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-03-20",
+      "low": 2500.0,
+      "high": 2800.0,
+      "average": 2650.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-03-27",
+      "low": 2800.0,
+      "high": 3150.0,
+      "average": 2975.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-04-03",
+      "low": 2800.0,
+      "high": 3190.0,
+      "average": 2995.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-04-10",
+      "low": 2800.0,
+      "high": 3280.0,
+      "average": 3040.0,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    },
+    {
+      "date": "2026-04-17",
+      "low": 2800.0,
+      "high": 3289.0,
+      "average": 3044.5,
+      "currency": "USD",
+      "unit": "MTU APT",
+      "source": "FastMarkets via Almonty"
+    }
+  ]
+}

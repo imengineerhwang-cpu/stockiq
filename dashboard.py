@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+import json
 from datetime import datetime
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -815,6 +816,377 @@ if w_df_m is not None and not w_df_m.empty:
         )
 
     st.caption(f"출처: {w_src} · 최근 수집 {w_fetched}")
+
+# ── 텅스텐 APT 장기 추이 (KOMIS 예측 + Almonty FastMarkets) ──────────────────
+st.subheader("📈 텅스텐 APT 장기 추이 (2008–현재)")
+st.caption("KOMIS 분기 데이터 (2008~2025-Q1) + Almonty FastMarkets 주간 데이터 (2025-06~) 결합")
+
+_komis_pred_path = "data/macro/tungsten/komis_prediction.csv"
+_almonty_path = "data/macro/tungsten/almonty_apt.json"
+try:
+    if os.path.exists(_komis_pred_path) and os.path.exists(_almonty_path):
+        # KOMIS: cp949, 분기별, USD/mtu
+        komis = pd.read_csv(_komis_pred_path, encoding="cp949")
+        komis = komis.rename(columns={"연도": "date", "예측가격": "price_usd_mtu"})
+        komis["date"] = pd.to_datetime(komis["date"])
+        # 사용자 요청: 2025.03월까지 (2025-01-01 = Q1 2025 = Jan~Mar)
+        komis = komis[komis["date"] <= "2025-01-01"][["date", "price_usd_mtu"]]
+        komis["source"] = "KOMIS (분기)"
+
+        # Almonty: JSON, 주간별, USD/MTU
+        with open(_almonty_path, "r", encoding="utf-8") as f:
+            alm_payload = json.load(f)
+        alm = pd.DataFrame(alm_payload["rows"])
+        alm["date"] = pd.to_datetime(alm["date"])
+        alm = alm[["date", "average"]].rename(columns={"average": "price_usd_mtu"})
+        alm["source"] = "Almonty/FastMarkets (주간)"
+
+        # 메트릭 카드
+        komis_latest = komis.iloc[-1] if not komis.empty else None
+        alm_latest = alm.iloc[-1] if not alm.empty else None
+        alm_first = alm.iloc[0] if not alm.empty else None
+
+        m1, m2, m3, m4 = st.columns(4)
+        if komis_latest is not None:
+            m1.metric(
+                "KOMIS 마지막 시점",
+                f"${komis_latest['price_usd_mtu']:,.1f}/MTU",
+                komis_latest["date"].strftime("%Y-%m"),
+            )
+        if alm_latest is not None:
+            m2.metric(
+                "Almonty 최신",
+                f"${alm_latest['price_usd_mtu']:,.1f}/MTU",
+                alm_latest["date"].strftime("%Y-%m-%d"),
+            )
+        if alm_first is not None and alm_latest is not None:
+            mult = alm_latest["price_usd_mtu"] / alm_first["price_usd_mtu"]
+            m3.metric(
+                "Almonty 시작 → 최신",
+                f"{mult:.1f}배",
+                f"{alm_first['date'].strftime('%Y-%m')} → {alm_latest['date'].strftime('%Y-%m')}",
+            )
+        if komis_latest is not None and alm_latest is not None:
+            mult2 = alm_latest["price_usd_mtu"] / komis_latest["price_usd_mtu"]
+            m4.metric(
+                "KOMIS 마지막 → 현재",
+                f"{mult2:.1f}배",
+                f"${komis_latest['price_usd_mtu']:,.1f} → ${alm_latest['price_usd_mtu']:,.1f}",
+            )
+
+        # 차트 — 단일 축, 두 시리즈
+        fig_apt = go.Figure()
+        fig_apt.add_trace(go.Scatter(
+            x=komis["date"], y=komis["price_usd_mtu"],
+            mode="lines+markers",
+            name="KOMIS (분기)",
+            line=dict(color="#1f77b4", width=2),
+            marker=dict(size=5),
+            hovertemplate="%{x|%Y-%m}<br>$%{y:,.1f}/MTU<br><i>KOMIS</i><extra></extra>",
+        ))
+        fig_apt.add_trace(go.Scatter(
+            x=alm["date"], y=alm["price_usd_mtu"],
+            mode="lines+markers",
+            name="Almonty/FastMarkets (주간)",
+            line=dict(color="#d62728", width=2),
+            marker=dict(size=4),
+            hovertemplate="%{x|%Y-%m-%d}<br>$%{y:,.1f}/MTU<br><i>Almonty</i><extra></extra>",
+        ))
+        # 최고가 annotation
+        if not alm.empty:
+            peak = alm.loc[alm["price_usd_mtu"].idxmax()]
+            fig_apt.add_annotation(
+                x=peak["date"], y=peak["price_usd_mtu"],
+                text=f"최고 ${peak['price_usd_mtu']:,.0f}<br>{peak['date'].strftime('%Y-%m-%d')}",
+                showarrow=True, arrowhead=2, ax=-40, ay=-40,
+                font=dict(size=11, color="#d62728"),
+                bgcolor="rgba(255,255,255,0.85)", bordercolor="#d62728",
+            )
+        fig_apt.update_layout(
+            title="텅스텐 APT 가격 (USD/MTU)",
+            xaxis=dict(title=""),
+            yaxis=dict(title="USD/MTU", tickformat=",.0f"),
+            height=460,
+            margin=dict(l=10, r=10, t=50, b=20),
+            legend=dict(orientation="h", y=-0.12),
+            template="plotly_white",
+            hovermode="x unified",
+        )
+        st.plotly_chart(fig_apt, width="stretch")
+
+        # 로그 스케일 토글
+        if st.checkbox("로그 스케일로 보기 (가격 대수 변화 강조)", value=False, key="apt_log"):
+            fig_apt.update_yaxes(type="log")
+            st.plotly_chart(fig_apt, width="stretch", key="apt_log_chart")
+
+        with st.expander("📋 결합 데이터 (최근 30개)"):
+            combined = pd.concat([komis, alm], ignore_index=True).sort_values("date")
+            tail = combined.tail(30).iloc[::-1].copy()
+            tail["date"] = tail["date"].dt.strftime("%Y-%m-%d")
+            tail["price_usd_mtu"] = tail["price_usd_mtu"].map(lambda v: f"${v:,.2f}")
+            st.dataframe(tail, width="stretch", hide_index=True)
+
+        # ── 텅스텐 vs 와이지-원 주가 오버레이 ──────────────────────────
+        st.markdown("##### 🔗 텅스텐 APT vs 와이지-원 주가 오버레이 (이중 축)")
+        try:
+            @st.cache_data(ttl=60 * 60 * 6, show_spinner="와이지-원 주가 로딩…")
+            def _yg1_monthly_close(start: str = "2008-01-01"):
+                import yfinance as yf
+                d = yf.Ticker("019210.KS").history(start=start, interval="1d", auto_adjust=False)
+                d.index = d.index.tz_localize(None)
+                return d["Close"].resample("ME").last().dropna()
+
+            yg1_m = _yg1_monthly_close()
+            apt_combined = pd.concat([komis, alm], ignore_index=True).sort_values("date")
+
+            fig_overlay = go.Figure()
+            fig_overlay.add_trace(go.Scatter(
+                x=apt_combined["date"], y=apt_combined["price_usd_mtu"],
+                name="텅스텐 APT (USD/MTU, 좌축)",
+                mode="lines",
+                line=dict(color="#d62728", width=2),
+                yaxis="y",
+                hovertemplate="%{x|%Y-%m}<br>$%{y:,.1f}/MTU<extra></extra>",
+            ))
+            fig_overlay.add_trace(go.Scatter(
+                x=yg1_m.index, y=yg1_m.values,
+                name="YG-1 주가 (KRW, 우축)",
+                mode="lines",
+                line=dict(color="#1f77b4", width=2, dash="dot"),
+                yaxis="y2",
+                hovertemplate="%{x|%Y-%m}<br>%{y:,.0f}원<extra></extra>",
+            ))
+            fig_overlay.update_layout(
+                title="텅스텐 APT vs 와이지-원 주가 (2008–현재)",
+                xaxis=dict(title=""),
+                yaxis=dict(
+                    title=dict(text="텅스텐 APT (USD/MTU)", font=dict(color="#d62728")),
+                    tickfont=dict(color="#d62728"),
+                    side="left", tickformat=",.0f",
+                ),
+                yaxis2=dict(
+                    title=dict(text="YG-1 주가 (KRW)", font=dict(color="#1f77b4")),
+                    tickfont=dict(color="#1f77b4"),
+                    overlaying="y", side="right", tickformat=",.0f",
+                ),
+                height=480,
+                margin=dict(l=70, r=70, t=50, b=20),
+                legend=dict(orientation="h", y=-0.12),
+                template="plotly_white",
+                hovermode="x unified",
+            )
+            st.plotly_chart(fig_overlay, width="stretch")
+
+            # ── 동조성 분석 (3가지 뷰) ─────────────────────────────────
+            apt_idx = apt_combined.set_index("date")["price_usd_mtu"]
+            apt_m = apt_idx.resample("ME").last().ffill().dropna()
+            start_dt = max(apt_m.index.min(), yg1_m.index.min())
+            apt_aligned = apt_m[apt_m.index >= start_dt]
+            yg1_aligned = yg1_m[yg1_m.index >= start_dt]
+            # 동일 인덱스로 align
+            common_idx = apt_aligned.index.intersection(yg1_aligned.index)
+            apt_a = apt_aligned.reindex(common_idx)
+            yg1_a = yg1_aligned.reindex(common_idx)
+
+            view_mode = st.radio(
+                "동조성 분석 뷰",
+                ["원본 이중축", "정규화 (기준=100, 로그)", "YoY 변화율 (%)", "롤링 상관계수", "폭등 전/후 분리"],
+                horizontal=True, key="apt_yg1_view",
+            )
+
+            if view_mode == "정규화 (기준=100, 로그)":
+                apt_n = apt_a / apt_a.iloc[0] * 100
+                yg1_n = yg1_a / yg1_a.iloc[0] * 100
+                fig2 = go.Figure()
+                fig2.add_trace(go.Scatter(x=apt_n.index, y=apt_n.values,
+                    name="텅스텐 APT (지수)", mode="lines",
+                    line=dict(color="#d62728", width=2)))
+                fig2.add_trace(go.Scatter(x=yg1_n.index, y=yg1_n.values,
+                    name="YG-1 주가 (지수)", mode="lines",
+                    line=dict(color="#1f77b4", width=2, dash="dot")))
+                fig2.update_layout(
+                    title=f"기준일=100 정규화, 로그 스케일 ({start_dt.strftime('%Y-%m')} 기준)",
+                    yaxis=dict(title="지수 (로그)", type="log"),
+                    height=420, template="plotly_white",
+                    legend=dict(orientation="h", y=-0.12), hovermode="x unified",
+                )
+                st.plotly_chart(fig2, width="stretch")
+                st.caption("💡 로그 스케일은 같은 % 변화가 같은 거리로 표시되어 과거 사이클의 동조성 확인에 유리합니다.")
+
+            elif view_mode == "YoY 변화율 (%)":
+                apt_yoy = apt_a.pct_change(12) * 100
+                yg1_yoy = yg1_a.pct_change(12) * 100
+                fig3 = go.Figure()
+                fig3.add_trace(go.Scatter(x=apt_yoy.index, y=apt_yoy.values,
+                    name="텅스텐 APT YoY", mode="lines",
+                    line=dict(color="#d62728", width=2),
+                    hovertemplate="%{x|%Y-%m}<br>APT YoY %{y:+.1f}%<extra></extra>"))
+                fig3.add_trace(go.Scatter(x=yg1_yoy.index, y=yg1_yoy.values,
+                    name="YG-1 주가 YoY", mode="lines",
+                    line=dict(color="#1f77b4", width=2, dash="dot"),
+                    hovertemplate="%{x|%Y-%m}<br>YG-1 YoY %{y:+.1f}%<extra></extra>"))
+                fig3.add_hline(y=0, line_width=1, line_color="#888")
+                fig3.update_layout(
+                    title="YoY 변화율 — 가격 레벨 제거, 모멘텀 동조성만 보기",
+                    yaxis=dict(title="전년 동월 대비 %"),
+                    height=420, template="plotly_white",
+                    legend=dict(orientation="h", y=-0.12), hovermode="x unified",
+                )
+                st.plotly_chart(fig3, width="stretch")
+                # YoY 동시 양수/음수 빈도
+                paired = pd.DataFrame({"apt": apt_yoy, "yg1": yg1_yoy}).dropna()
+                same_sign = ((paired["apt"] > 0) == (paired["yg1"] > 0)).mean() * 100
+                corr_yoy = paired["apt"].corr(paired["yg1"])
+                st.caption(
+                    f"💡 YoY 동방향 발생 빈도: **{same_sign:.0f}%**  ·  "
+                    f"YoY 상관계수: **{corr_yoy:+.2f}**  "
+                    f"(데이터 {len(paired)}개월)"
+                )
+
+            elif view_mode == "폭등 전/후 분리":
+                # 폭등 분기점: 2025-04-30 (KOMIS 마지막 분기 ~ Almonty 시작 사이)
+                split_dt = pd.Timestamp("2025-04-30")
+
+                # ── (1) 폭등 이전 (2008-01 ~ 2025-04) ─────────────────────
+                apt_pre = apt_a[apt_a.index <= split_dt]
+                yg1_pre = yg1_a[yg1_a.index <= split_dt]
+                fig_pre = go.Figure()
+                fig_pre.add_trace(go.Scatter(
+                    x=apt_pre.index, y=apt_pre.values,
+                    name="텅스텐 APT (USD/MTU, 좌)",
+                    mode="lines", line=dict(color="#d62728", width=2),
+                    yaxis="y",
+                    hovertemplate="%{x|%Y-%m}<br>$%{y:,.0f}/MTU<extra></extra>",
+                ))
+                fig_pre.add_trace(go.Scatter(
+                    x=yg1_pre.index, y=yg1_pre.values,
+                    name="YG-1 주가 (KRW, 우)",
+                    mode="lines", line=dict(color="#1f77b4", width=2, dash="dot"),
+                    yaxis="y2",
+                    hovertemplate="%{x|%Y-%m}<br>%{y:,.0f}원<extra></extra>",
+                ))
+                fig_pre.update_layout(
+                    title="① 폭등 이전 (2008–2025.04) — 과거 사이클 동조성",
+                    xaxis=dict(title=""),
+                    yaxis=dict(
+                        title=dict(text="APT (USD/MTU)", font=dict(color="#d62728")),
+                        tickfont=dict(color="#d62728"), side="left",
+                    ),
+                    yaxis2=dict(
+                        title=dict(text="YG-1 (KRW)", font=dict(color="#1f77b4")),
+                        tickfont=dict(color="#1f77b4"),
+                        overlaying="y", side="right",
+                    ),
+                    height=380, template="plotly_white",
+                    legend=dict(orientation="h", y=-0.18),
+                    margin=dict(l=70, r=70, t=50, b=20),
+                    hovermode="x unified",
+                )
+                st.plotly_chart(fig_pre, width="stretch")
+
+                # 사이클 영역 마킹
+                pre_corr = apt_pre.pct_change().corr(yg1_pre.pct_change())
+                pre_yoy_corr = (apt_pre.pct_change(12).corr(yg1_pre.pct_change(12)))
+                st.caption(
+                    f"💡 폭등 이전 (2008–2025.04): "
+                    f"월수익률 상관 **{pre_corr:+.2f}**  ·  "
+                    f"YoY 상관 **{pre_yoy_corr:+.2f}**  ·  "
+                    f"{len(apt_pre)}개월"
+                )
+
+                # ── (2) 폭등 이후 (2025-04 ~ 현재) ─────────────────────────
+                apt_post = apt_a[apt_a.index >= split_dt]
+                yg1_post = yg1_a[yg1_a.index >= split_dt]
+                fig_post = go.Figure()
+                fig_post.add_trace(go.Scatter(
+                    x=apt_post.index, y=apt_post.values,
+                    name="텅스텐 APT (USD/MTU, 좌)",
+                    mode="lines+markers", line=dict(color="#d62728", width=2),
+                    marker=dict(size=6),
+                    yaxis="y",
+                    hovertemplate="%{x|%Y-%m}<br>$%{y:,.0f}/MTU<extra></extra>",
+                ))
+                fig_post.add_trace(go.Scatter(
+                    x=yg1_post.index, y=yg1_post.values,
+                    name="YG-1 주가 (KRW, 우)",
+                    mode="lines+markers", line=dict(color="#1f77b4", width=2, dash="dot"),
+                    marker=dict(size=6),
+                    yaxis="y2",
+                    hovertemplate="%{x|%Y-%m}<br>%{y:,.0f}원<extra></extra>",
+                ))
+                fig_post.update_layout(
+                    title="② 폭등 이후 (2025.05–현재) — 최근 동조성·선후행",
+                    xaxis=dict(title=""),
+                    yaxis=dict(
+                        title=dict(text="APT (USD/MTU)", font=dict(color="#d62728")),
+                        tickfont=dict(color="#d62728"), side="left",
+                    ),
+                    yaxis2=dict(
+                        title=dict(text="YG-1 (KRW)", font=dict(color="#1f77b4")),
+                        tickfont=dict(color="#1f77b4"),
+                        overlaying="y", side="right",
+                    ),
+                    height=380, template="plotly_white",
+                    legend=dict(orientation="h", y=-0.18),
+                    margin=dict(l=70, r=70, t=50, b=20),
+                    hovermode="x unified",
+                )
+                st.plotly_chart(fig_post, width="stretch")
+
+                if len(apt_post) >= 3 and len(yg1_post) >= 3:
+                    post_corr = apt_post.pct_change().corr(yg1_post.pct_change())
+                    apt_post_mult = apt_post.iloc[-1] / apt_post.iloc[0]
+                    yg1_post_mult = yg1_post.iloc[-1] / yg1_post.iloc[0]
+                    st.caption(
+                        f"💡 폭등 이후 (2025.05~): "
+                        f"APT **{apt_post_mult:.1f}배** ↑ ("
+                        f"${apt_post.iloc[0]:,.0f} → ${apt_post.iloc[-1]:,.0f}/MTU)  ·  "
+                        f"YG-1 **{yg1_post_mult:.1f}배** ↑ ("
+                        f"{yg1_post.iloc[0]:,.0f}원 → {yg1_post.iloc[-1]:,.0f}원)  ·  "
+                        f"월수익률 상관 **{post_corr:+.2f}**  ·  "
+                        f"{len(apt_post)}개월"
+                    )
+
+            elif view_mode == "롤링 상관계수":
+                window = st.slider("롤링 창 (개월)", 12, 60, 24, key="apt_yg1_window")
+                apt_ret = apt_a.pct_change()
+                yg1_ret = yg1_a.pct_change()
+                roll_corr = apt_ret.rolling(window).corr(yg1_ret)
+                fig4 = go.Figure()
+                colors = ["#2ca02c" if v >= 0 else "#d62728" for v in roll_corr.fillna(0).values]
+                fig4.add_trace(go.Bar(
+                    x=roll_corr.index, y=roll_corr.values,
+                    marker_color=colors, name=f"{window}개월 상관계수",
+                    hovertemplate="%{x|%Y-%m}<br>상관 %{y:+.2f}<extra></extra>",
+                ))
+                fig4.add_hline(y=0, line_width=1, line_color="#888")
+                fig4.add_hline(y=0.5, line_width=1, line_color="#2ca02c", line_dash="dash",
+                               annotation_text="강한 양의 상관 (+0.5)")
+                fig4.add_hline(y=-0.5, line_width=1, line_color="#d62728", line_dash="dash",
+                               annotation_text="강한 음의 상관 (-0.5)")
+                fig4.update_layout(
+                    title=f"{window}개월 롤링 상관계수 (월별 수익률 기준)",
+                    yaxis=dict(title="상관계수", range=[-1, 1]),
+                    height=420, template="plotly_white",
+                    showlegend=False, hovermode="x",
+                )
+                st.plotly_chart(fig4, width="stretch")
+                avg_corr = roll_corr.dropna().mean()
+                pos_pct = (roll_corr.dropna() > 0).mean() * 100
+                st.caption(
+                    f"💡 평균 상관계수: **{avg_corr:+.2f}**  ·  "
+                    f"양의 상관 기간 비율: **{pos_pct:.0f}%**  ·  "
+                    f"+0.5 이상 (강한 동조) 구간이 많을수록 텅스텐-주가 연계성 강함"
+                )
+        except Exception as _ov_err:
+            st.warning(f"오버레이 차트 로드 실패: {_ov_err}")
+    else:
+        miss = []
+        if not os.path.exists(_komis_pred_path): miss.append(_komis_pred_path)
+        if not os.path.exists(_almonty_path): miss.append(_almonty_path)
+        st.warning(f"필요 파일 없음: {', '.join(miss)}")
+except Exception as _apt_err:
+    st.error(f"APT 차트 로드 실패: {_apt_err}")
 
 st.divider()
 
