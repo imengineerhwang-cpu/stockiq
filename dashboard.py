@@ -203,6 +203,268 @@ else:
 
 st.divider()
 
+# 경쟁사 주가·시가총액 비교 (YG-1 vs OSG vs KMT)
+st.subheader("🏁 경쟁사 비교 — 연봉 주가 & 시가총액")
+
+PEERS_CFG = [
+    {"ticker": "019210.KS", "name": "YG-1", "currency": "KRW", "fx": "KRW=X", "color": "#d62728", "axis": "y3"},
+    {"ticker": "6136.T",    "name": "OSG",  "currency": "JPY", "fx": "JPY=X", "color": "#1f77b4", "axis": "y"},
+    {"ticker": "KMT",       "name": "KMT",  "currency": "USD", "fx": None,    "color": "#2ca02c", "axis": "y2"},
+]
+
+
+# ── 공식 소스 기반 발행주식수 시계열 (분기·연말 기준) ───────────────────────
+# YG-1: DART stockTotqySttus API — reprt_code 11013/11012/11014/11011 (Q1~Q4)
+#   합계 istc_totqy (보통주+우선주, 자사주 제외 후 유통주식)
+YG1_SHARES_Q = {
+    "2016-03-31": 28_615_520, "2016-06-30": 28_615_520, "2016-09-30": 28_615_520, "2016-12-31": 29_457_513,
+    "2017-03-31": 29_519_632, "2017-06-30": 29_640_077, "2017-09-30": 29_842_668, "2017-12-31": 31_448_331,
+    "2018-03-31": 31_449_158, "2018-06-30": 31_449_158, "2018-09-30": 31_449_158, "2018-12-31": 31_449_158,
+    "2019-03-31": 31_449_158, "2019-06-30": 31_449_158, "2019-09-30": 31_449_158, "2019-12-31": 31_449_239,
+    "2020-03-31": 31_449_239, "2020-06-30": 31_449_239, "2020-09-30": 31_449_239, "2020-12-31": 34_193_728,
+    "2021-03-31": 34_193_728, "2021-06-30": 34_193_728, "2021-09-30": 34_193_728, "2021-12-31": 34_193_728,
+    "2022-03-31": 34_193_728, "2022-06-30": 34_193_728, "2022-09-30": 34_193_728, "2022-12-31": 34_193_728,
+    "2023-03-31": 34_193_728, "2023-06-30": 34_193_728, "2023-09-30": 34_193_728, "2023-12-31": 34_193_728,
+    "2024-03-31": 37_193_728, "2024-06-30": 37_193_728, "2024-09-30": 37_193_728, "2024-12-31": 37_193_728,
+    "2025-03-31": 37_193_728, "2025-06-30": 37_193_728, "2025-09-30": 37_193_728, "2025-12-31": 37_193_728,
+}
+# KMT: SEC EntityCommonStockSharesOutstanding — 10-Q/10-K 커버일자 기준
+KMT_SHARES_Q = {
+    "2016-01-29": 79_672_229, "2016-04-29": 79_689_781, "2016-07-29": 79_700_981, "2016-10-31": 79_933_935,
+    "2017-01-31": 80_193_977, "2017-04-28": 80_554_198, "2017-07-31": 80_672_938, "2017-10-31": 81_048_153,
+    "2018-01-31": 81_573_415, "2018-04-30": 81_628_262, "2018-07-31": 81_647_556, "2018-10-31": 82_102_785,
+    "2019-01-31": 82_233_615, "2019-04-30": 82_390_406, "2019-07-31": 82_462_011, "2019-10-31": 82_856_908,
+    "2020-01-31": 82_898_074, "2020-04-30": 82_913_959, "2020-07-31": 82_927_634, "2020-10-30": 83_276_032,
+    "2021-01-29": 83_533_003, "2021-04-30": 83_598_649, "2021-07-31": 83_615_430, "2021-10-29": 83_645_026,
+    "2022-01-31": 83_090_710, "2022-04-29": 82_638_419, "2022-07-29": 81_338_696, "2022-10-31": 80_576_387,
+    "2023-01-31": 80_527_022, "2023-04-28": 80_275_367, "2023-07-31": 79_711_220, "2023-10-31": 79_603_305,
+    "2024-01-31": 79_269_782, "2024-04-30": 78_665_910, "2024-07-31": 77_900_791, "2024-10-31": 77_725_882,
+    "2025-01-31": 77_360_327, "2025-04-30": 76_233_564, "2025-07-31": 76_021_577, "2025-10-31": 76_093_136,
+    "2026-01-31": 76_198_792,
+}
+# OSG: IR FY 결산단신 PDF, 회계연도말 Nov 30 보통주 유통주식수 (발행-자사주)
+#   분기 데이터 대신 연 1회 값 사용 → 월별 주가와 결합 시 step function forward-fill
+OSG_SHARES_Q = {
+    "2015-11-30": 95_046_256, "2016-11-30": 90_025_147, "2017-11-30": 97_184_575,
+    "2018-11-30": 97_970_188, "2019-11-30": 97_191_831, "2020-11-30": 97_450_361,
+    "2021-11-30": 97_668_266, "2022-11-30": 95_668_994, "2023-11-30": 95_944_700,
+    "2024-11-30": 84_921_343, "2025-11-30": 82_150_384,
+}
+
+
+def _shares_series(mapping: dict[str, int]) -> pd.Series:
+    """문자열 날짜 dict → 정렬된 pd.Series (index=Timestamp)."""
+    s = pd.Series({pd.Timestamp(k): v for k, v in mapping.items()}).sort_index()
+    return s
+
+
+@st.cache_data(ttl=60 * 60 * 6, show_spinner="yfinance에서 주가·환율 수집중…")
+def _peer_dataset(start: str = "2017-01-01"):
+    import yfinance as yf
+
+    ohlc, monthly, fx_monthly = {}, {}, {}
+    for p in PEERS_CFG:
+        tk = yf.Ticker(p["ticker"])
+        d = tk.history(start=start, interval="1d", auto_adjust=False)
+        if not d.empty:
+            d.index = d.index.tz_localize(None)
+            y = d.resample("YE").agg(
+                {"Open": "first", "High": "max", "Low": "min", "Close": "last"}
+            ).dropna()
+            y.index = y.index.year
+            m = d["Close"].resample("ME").last().dropna()
+        else:
+            y, m = pd.DataFrame(), pd.Series(dtype=float)
+        ohlc[p["name"]] = y
+        monthly[p["name"]] = m
+
+        if p["fx"]:
+            fxd = yf.Ticker(p["fx"]).history(start=start, interval="1d", auto_adjust=False)
+            fxd.index = fxd.index.tz_localize(None)
+            fx_monthly[p["name"]] = fxd["Close"].resample("ME").last().dropna()
+        else:
+            fx_monthly[p["name"]] = None
+    return ohlc, monthly, fx_monthly
+
+
+try:
+    peer_ohlc, peer_monthly, peer_fx = _peer_dataset()
+
+    # 1) 주가 추이 — 3사 월말 종가, 각자 별도 y축 (OSG 좌, YG-1 우·보조, KMT 우-외곽)
+    AXIS_MAP = {"OSG": "y", "YG-1": "y2", "KMT": "y3"}
+    fig_price = go.Figure()
+    for p in PEERS_CFG:
+        s = peer_monthly[p["name"]]
+        if s.empty:
+            continue
+        is_yg1 = p["name"] == "YG-1"
+        fig_price.add_trace(go.Scatter(
+            x=s.index, y=s.values,
+            name=f"{p['name']} ({p['currency']}){' · 보조축' if is_yg1 else ''}",
+            mode="lines",
+            line=dict(color=p["color"], width=2, dash="dot" if is_yg1 else "solid"),
+            yaxis=AXIS_MAP[p["name"]],
+        ))
+    fig_price.update_layout(
+        title="2017–2026 주가 추이 (월말 종가) — YG-1 은 보조축",
+        xaxis=dict(title="연도", domain=[0.0, 0.92]),
+        yaxis=dict(
+            title=dict(text="OSG (JPY)", font=dict(color="#1f77b4")),
+            tickfont=dict(color="#1f77b4"),
+            side="left", tickformat=",.0f",
+        ),
+        yaxis2=dict(
+            title=dict(text="YG-1 (KRW)", font=dict(color="#d62728")),
+            tickfont=dict(color="#d62728"),
+            overlaying="y", side="right",
+            tickformat=",.0f",
+        ),
+        yaxis3=dict(
+            title=dict(text="KMT (USD)", font=dict(color="#2ca02c")),
+            tickfont=dict(color="#2ca02c"),
+            overlaying="y", side="right",
+            anchor="free", position=1.0,
+            tickformat=",.0f",
+        ),
+        height=520, margin=dict(l=70, r=110, t=60, b=60),
+        template="plotly_white",
+        legend=dict(orientation="h", y=-0.2),
+        hovermode="x unified",
+    )
+    st.plotly_chart(fig_price, use_container_width=True)
+
+    # 2) 시가총액 월별 선그래프 — 분기별 공식 주식수 × 월말 종가 × 월말 FX → 억원
+    shares_series_map = {
+        "YG-1": _shares_series(YG1_SHARES_Q),
+        "OSG":  _shares_series(OSG_SHARES_Q),
+        "KMT":  _shares_series(KMT_SHARES_Q),
+    }
+    krw_fx_m = peer_fx["YG-1"]   # USD→KRW 월말 종가
+    jpy_fx_m = peer_fx["OSG"]    # USD→JPY 월말 종가
+
+    def _to_krw_eok_m(name: str, dt: pd.Timestamp, close: float, shares: float) -> float | None:
+        local = close * shares
+        if name == "YG-1":
+            return local / 1e8
+        if name == "OSG":
+            if krw_fx_m is None or jpy_fx_m is None:
+                return None
+            k = krw_fx_m.asof(dt); j = jpy_fx_m.asof(dt)
+            if pd.isna(k) or pd.isna(j) or not j:
+                return None
+            return local * (k / j) / 1e8
+        # KMT (USD → KRW)
+        if krw_fx_m is None:
+            return None
+        k = krw_fx_m.asof(dt)
+        if pd.isna(k):
+            return None
+        return local * k / 1e8
+
+    mcap_rows = []
+    for p in PEERS_CFG:
+        m = peer_monthly[p["name"]]
+        sh_series = shares_series_map[p["name"]]
+        if m.empty or sh_series.empty:
+            continue
+        for dt, close in m.items():
+            sh_val = sh_series.asof(dt)  # step function: 해당 시점 이전 최신값
+            if pd.isna(sh_val):
+                continue
+            v = _to_krw_eok_m(p["name"], dt, float(close), float(sh_val))
+            if v is None:
+                continue
+            mcap_rows.append({"date": dt, "company": p["name"], "mcap_eok": v})
+
+    mcap_df = pd.DataFrame(mcap_rows)
+    if not mcap_df.empty:
+        fig_mcap = go.Figure()
+        for p in PEERS_CFG:
+            sub = mcap_df[mcap_df["company"] == p["name"]].sort_values("date")
+            if sub.empty:
+                continue
+            is_yg1 = p["name"] == "YG-1"
+            fig_mcap.add_trace(go.Scatter(
+                x=sub["date"], y=sub["mcap_eok"],
+                name=f"{p['name']}{' (보조축)' if is_yg1 else ''}",
+                mode="lines",
+                line=dict(color=p["color"], width=2, dash="dot" if is_yg1 else "solid"),
+                yaxis="y2" if is_yg1 else "y",
+                hovertemplate=f"{p['name']} · %{{x|%Y-%m}}<br>%{{y:,.0f}} 억원<extra></extra>",
+            ))
+        fig_mcap.update_layout(
+            title="시가총액 추이 (월말, 단위: 억원) — YG-1 보조축",
+            xaxis=dict(title="연도"),
+            yaxis=dict(title="OSG / KMT (억원)", side="left", tickformat=",.0f"),
+            yaxis2=dict(
+                title=dict(text="YG-1 (억원)", font=dict(color="#d62728")),
+                tickfont=dict(color="#d62728"),
+                overlaying="y", side="right", tickformat=",.0f",
+            ),
+            height=500, template="plotly_white",
+            legend=dict(orientation="h", y=-0.15),
+            hovermode="x unified",
+        )
+        st.plotly_chart(fig_mcap, use_container_width=True)
+
+        with st.expander("원데이터 보기 (월말 시가총액, 억원)"):
+            pivot = mcap_df.pivot(index="date", columns="company", values="mcap_eok").round(0)
+            pivot.index = pivot.index.strftime("%Y-%m")
+            st.dataframe(pivot.astype("Int64"), width="stretch")
+    else:
+        st.info("시가총액 데이터를 만들 수 없습니다 (발행주식수/환율 미확보).")
+except Exception as _peer_err:
+    st.warning(f"경쟁사 차트 로드 실패: {_peer_err}")
+
+# 경쟁사 재무·밸류에이션 비교표
+st.subheader("📊 경쟁사 재무·밸류에이션 비교표 (2015–2025, 단위: 억원)")
+_pc_path = "data/companies/와이지-원/peer_compare.csv"
+if os.path.exists(_pc_path):
+    pc_df = pd.read_csv(_pc_path)
+    st.caption("YG-1: DART 사업보고서 · KMT: SEC XBRL · OSG: IR 결산단신 PDF · "
+               "외화 → 연평균 환율(yfinance KRW=X, JPY=X)로 원화 환산")
+
+    metrics = [
+        "매출액(억원)", "영업이익(억원)", "당기순이익(억원)", "영업이익률(%)",
+        "재고자산(억원)", "원재료(억원)", "시가총액(억원)", "PER", "PBR",
+    ]
+    # 헤더 약식 (억원 표기 생략, 섹션 캡션에 단위 명시)
+    SHORT = {
+        "매출액(억원)": "매출액", "영업이익(억원)": "영업이익", "당기순이익(억원)": "순이익",
+        "영업이익률(%)": "OPM(%)", "재고자산(억원)": "재고", "원재료(억원)": "원재료",
+        "시가총액(억원)": "시총", "PER": "PER", "PBR": "PBR",
+    }
+
+    def _fmt_company_table(df_company: pd.DataFrame):
+        t = df_company[["연도"] + metrics].copy().rename(columns=SHORT)
+        def cell(v, m):
+            if pd.isna(v): return "-"
+            if m in ("OPM(%)", "PER", "PBR"):
+                return f"{v:,.1f}"
+            return f"{v:,.0f}"
+        for c in t.columns:
+            if c == "연도":
+                t[c] = t[c].astype(int).astype(str)
+            else:
+                t[c] = t[c].apply(lambda v, c=c: cell(v, c))
+        # 연도를 컬럼으로, 지표를 행으로 → 전치
+        return t.set_index("연도").T.rename_axis(index="지표", columns=None)
+
+    for comp, emoji in [("YG-1", "🇰🇷"), ("OSG", "🇯🇵"), ("KMT", "🇺🇸")]:
+        sub = pc_df[pc_df["회사"] == comp].sort_values("연도")
+        if sub.empty:
+            continue
+        st.markdown(f"#### {emoji} {comp}")
+        st.table(_fmt_company_table(sub))
+
+    with st.expander("🔧 데이터 재생성 (peer_compare.py 실행)"):
+        st.code("python peer_compare.py", language="bash")
+        st.caption("DART/SEC/PDF 원천에서 다시 추출하려면 위 명령 실행 후 페이지 새로고침")
+else:
+    st.info("`peer_compare.py` 를 먼저 실행해 주세요. → 결과: `data/companies/와이지-원/peer_compare.csv`")
+
+st.divider()
+
 # 공시 데이터
 st.subheader("최근 공시")
 if os.path.exists("data/disclosures.csv"):
